@@ -13,7 +13,8 @@ Depends:
     R (>= 4.5.0)
 Imports: 
     ape (>= 5.8.1),
-    dplyr (>= 1.1.4)
+    dplyr (>= 1.1.4),
+    utils (>= 4.5.2)
 Description: More about what it does (maybe more than one line).
     Continuation lines should be indented.
 License: MIT + file LICENSE
