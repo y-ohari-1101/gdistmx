@@ -1,14 +1,23 @@
+#' @title homology_mx
+#' @description \code{dist_within_group} Calculating genetic distances within each group
+#' @param dna DNAbin inported by ape::read.dna()
+#' @param group_df group definition file
+#' @return List consist of genetic distance among individuals and groups
+#' @export
+#' @import utils
+#' @seealso ape
+
 homology_mx <- function(dna, group_df) {
-  
+
   # ================================================================
   # 0. Recursive handling for list input
   # ================================================================
   if (is.list(dna) && all(sapply(dna, inherits, "DNAbin"))) {
-    
+
     if (is.null(names(dna))) {
       stop("homology_mx(): list input must have names for each gene.")
     }
-    
+
     out <- lapply(names(dna), function(gene) {
       res <- homology_mx(dna[[gene]], group_df)
       res$gene <- gene
@@ -17,29 +26,29 @@ homology_mx <- function(dna, group_df) {
     names(out) <- names(dna)
     return(out)
   }
-  
+
   # ================================================================
   # 1. Validate DNAbin
   # ================================================================
   if (!inherits(dna, "DNAbin"))
     stop("homology_mx(): dna must be a DNAbin object.")
-  
+
   if (is.null(rownames(dna)))
     stop("homology_mx(): DNAbin requires rownames.")
-  
+
   # ================================================================
   # 2. Compute within/between homology
   # ================================================================
   within  <- homology_within_group(dna, group_df)
   between <- homology_between_group(dna, group_df)
-  
+
   # ================================================================
   # 3. Construct homology matrix
   # ================================================================
   groups <- unique(group_df$group)
   G <- length(groups)
   mat <- matrix("", nrow=G, ncol=G, dimnames=list(groups, groups))
-  
+
   # diagonal
   for (g in groups) {
     row <- within$summary[within$summary$group == g, ]
@@ -50,30 +59,30 @@ homology_mx <- function(dna, group_df) {
       mat[g, g] <- mm
     }
   }
-  
+
   # between
   if (!is.null(between$summary) && nrow(between$summary) > 0) {
     for (i in seq_along(groups)) {
       for (j in seq_along(groups)) if (j > i) {
-        
+
         g1 <- groups[i]
         g2 <- groups[j]
-        
+
         row <- between$summary[
           between$summary$group1 == g1 &
             between$summary$group2 == g2, ]
-        
+
         if (nrow(row) == 0) next
-        
+
         mean_str  <- sprintf("%.2f%%", row$mean)
         range_str <- sprintf("%.2f%% - %.2f%%", row$min, row$max)
-        
+
         mat[g2, g1] <- mean_str
         mat[g1, g2] <- range_str
       }
     }
   }
-  
+
   # ================================================================
   # 4. Return
   # ================================================================
